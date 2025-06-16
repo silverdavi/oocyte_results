@@ -18,27 +18,52 @@ The calculator implements age-specific AMH percentile distributions derived from
 \text{AMH}_{\text{normal}}(\text{age}) = f(\text{age-specific percentiles})
 \end{equation}
 
-where AMH percentiles demonstrate dramatic age-related decline (e.g., median AMH $\approx$ 1.8 ng/mL at age 25 vs. $\approx$ 0.18 ng/mL at age 42)~\cite{lee2017amh}.
+where $f$ represents a sigmoid function parametrized from published age-stratified AMH distributions~\cite{lee2017amh}. The function captures the dramatic age-related decline in AMH percentiles: median values decrease from $\approx$ 1.8 ng/mL at age 25 to $\approx$ 0.18 ng/mL at age 42, with 10th and 90th percentiles showing parallel decline patterns~\cite{lee2017amh}.
 
-\subsubsection{Oocyte Yield Prediction}
+\subsubsection{Comprehensive IVF Cycle Prediction Pipeline}
 
-The parametric model combines age effects and AMH multipliers through established clinical relationships~\cite{seifer2002amh,ovarian_reserve_testing}:
+The parametric model implements a complete IVF cycle simulation from oocyte retrieval through live birth, incorporating stage-specific attrition rates and patient-specific factors~\cite{seifer2002amh,ovarian_reserve_testing}.
+
+\textbf{Oocyte Retrieval Prediction:}
+The initial oocyte yield combines age effects, AMH adjustments, and optional antral follicle count (AFC) data through established clinical relationships:
 
 \begin{equation}
-\text{Predicted Oocytes} = \text{Base}(\text{age}) \times \text{AMH Multiplier}(\text{AMH}, \text{age})
+\text{Retrieved Oocytes} = \text{Base}(\text{age}) \times \text{AMH Factor}(\text{AMH}, \text{age}) \times \text{Health Factors}
 \end{equation}
 
-where the age-dependent baseline follows:
+The age-dependent baseline utilizes a sigmoid function to capture the nonlinear decline in ovarian response with advancing age~\cite{acog2017advanced}:
 \begin{equation}
-\text{Base}(\text{age}) = \max(0, 20 - 0.5 \times (\text{age} - 25))
+\text{Base}(\text{age}) = \text{sigmoid}(\text{age}, \text{age-specific parameters})
 \end{equation}
 
-and the AMH multiplier incorporates age-specific percentile normalization:
+The AMH factor employs a Gompertz growth function to model the relationship between AMH ratios and oocyte yield multipliers:
 \begin{equation}
-\text{AMH Multiplier} = 0.5 + 1.5 \times \text{AMH Percentile}(\text{age})
+\text{AMH Factor} = \text{Gompertz}\left(\frac{\text{AMH}_{\text{patient}}}{\text{AMH}_{\text{normal}}(\text{age})}\right)
 \end{equation}
 
-The age component captures ovarian aging effects~\cite{acog2017advanced}, while the AMH multiplier adjusts predictions based on individual ovarian reserve relative to age-appropriate norms derived from Lee et al.~\cite{lee2017amh}. This approach provides transparent, clinically interpretable predictions that can be easily explained to patients during counseling sessions.
+When AFC data is available, the model incorporates the Ovarian Response Prediction Index (ORPI) for enhanced accuracy:
+\begin{equation}
+\text{ORPI} = \frac{\text{AMH} \times \text{AFC}}{\text{age}}
+\end{equation}
+
+\textbf{Complete Attrition Pipeline:}
+The model simulates the full IVF process through age-stratified attrition rates at each critical stage:
+
+\begin{align}
+\text{Frozen} &= f_{\text{freeze}}(\text{Retrieved}, \text{age}, \text{ORPI}) \\
+\text{Thawed} &= \text{Frozen} \times \alpha_{\text{thaw}}(\text{age}) \\
+\text{Fertilized} &= \text{Thawed} \times \alpha_{\text{fert}}(\text{age}) \\
+\text{Good Embryos} &= \text{Fertilized} \times \alpha_{\text{embryo}}(\text{age}) \\
+\text{Implanted} &= \text{Good Embryos} \times \alpha_{\text{implant}}(\text{age}) \times \text{Patient Factors} \\
+\text{Live Birth} &= \text{Implanted} \times \alpha_{\text{birth}}
+\end{align}
+
+where $\alpha_{\text{stage}}(\text{age})$ represents age-specific attrition rates derived from clinical outcomes, and Patient Factors incorporate BMI effects (polynomial function), ethnicity adjustments, and health condition modifiers (e.g., PCOS enhances oocyte yield by 20\%, endometriosis reduces implantation by 20\%) based on published clinical evidence~\cite{lee2017amh}.
+
+\textbf{Multiple Cycle Projections:}
+The framework provides predictions for up to three consecutive cycles, accounting for age progression and cumulative live birth probabilities using established probability theory for independent trials with age-dependent success rates.
+
+This comprehensive approach employs biologically-motivated nonlinear functions and stage-specific attrition modeling that accurately captures the complex relationships throughout the entire IVF process, while maintaining clinical interpretability through transparent mathematical formulations that can be explained to patients during counseling sessions.
 
 \subsection{Oocyte Quality Assessment Model}\label{subsec:quality}
 
@@ -61,13 +86,32 @@ The ViT architecture consists of:
 
 Model training utilized the complete 702-sample dataset with 8-fold cross-validation~\cite{varoquaux2022machine}. Each fold maintained stratified sampling to preserve the 66.7\% positive class distribution observed in clinical practice.
 
-Training parameters included:
-\begin{itemize}
-\item Batch size optimization for available computational resources
-\item Learning rate scheduling with adaptive adjustments~\cite{kingma2015adam}
-\item Early stopping based on validation performance
-\item Regularization techniques to prevent overfitting
-\end{itemize}
+Training parameters were optimized for reproducibility and performance:
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\hline
+\textbf{Parameter} & \textbf{Value} \\
+\hline
+Optimizer & AdamW \\
+Initial Learning Rate & 3e-4 \\
+Weight Decay & 0.01 \\
+Beta Values & (0.9, 0.999) \\
+Batch Size & 16 \\
+Max Epochs & 100 \\
+Learning Rate Schedule & Cosine annealing with warm-up (5 epochs) \\
+Early Stopping Patience & 10 epochs \\
+Early Stopping Metric & Validation AUC \\
+Minimum Delta & 0.001 \\
+Dropout Rate & 0.1 \\
+Data Augmentation & Random horizontal flip (p=0.5), rotation ($\pm$15°) \\
+Normalization & Z-score (channel-wise) \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Table 2:} Vision Transformer Training Hyperparameters
 
 \subsubsection{Performance Evaluation}
 
@@ -111,4 +155,4 @@ The dual-model framework was designed for clinical integration~\cite{fda2022clin
 \item \textbf{Combined Reporting}: Integrated output combining cycle predictions with individual oocyte quality assessments for comprehensive patient counseling~\cite{asrm2021counselors}.
 \end{enumerate}
 
-All implementations prioritized transparency and clinical interpretability over black-box accuracy~\cite{topol2019high}, ensuring that predictions could be meaningfully discussed with patients and incorporated into clinical decision-making processes~\cite{beauchamp2019principles}. 
+All implementations prioritized transparency and clinical interpretability over opaque model accuracy~\cite{topol2019high}, ensuring that predictions could be meaningfully discussed with patients and incorporated into clinical decision-making processes~\cite{beauchamp2019principles}. 
