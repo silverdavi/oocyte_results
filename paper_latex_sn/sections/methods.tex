@@ -2,7 +2,7 @@
 
 \subsection{Dataset and Study Design}\label{subsec:dataset}
 
-This study utilized the publicly available time-lapse embryo dataset described by Gomez et al.~\cite{gomez2022timelapse}, comprising 704 time-lapse videos of developing embryos with 2.4M images across 7 focal planes. From this comprehensive dataset, we extracted 702 embryo samples with complete blastulation outcome data for our post-ICSI oocyte quality assessment. Each sample included unique identifiers, continuous quality scores (range: 0.004-0.999, mean: 0.592 ± 0.287), and binary blastulation labels (66.7\% successful outcomes, reflecting typical clinical IVF success rates)~\cite{awadalla2021age,zhu2024developmental}. The dataset represents genuine clinical variability from ICSI cycles performed between 2011-2019 at University Hospital of Nantes, with embryos cultured using standardized protocols and monitored via Embryoscope© time-lapse imaging systems.
+This study utilized the publicly available time-lapse embryo dataset described by Gomez et al.~\cite{gomez2022timelapse}, comprising 704 time-lapse videos of developing embryos with 2.4M images across 7 focal planes. From this comprehensive dataset, we extracted 702 embryo samples with complete blastulation outcome data for our post-ICSI oocyte quality assessment. Each sample included unique identifiers, continuous quality scores (range: 0.004-0.999, mean: 0.592 ± 0.287), and binary blastulation labels (66.7\% successful outcomes, reflecting typical clinical IVF success rates)~\cite{awadalla2021age,zhu2024developmental}. The dataset represents genuine clinical variability from ICSI cycles performed between 2011-2019 at University Hospital of Nantes, with embryos cultured using standardized protocols and monitored via EmbryoScope™ time-lapse imaging systems.
 
 All data analysis was performed using real clinical outcomes to ensure clinically relevant performance metrics~\cite{varoquaux2022machine}. Cross-validation was implemented using 8-fold stratified sampling to maintain class balance and provide robust performance estimates across the complete dataset~\cite{hastie2009elements}.
 
@@ -80,7 +80,7 @@ The ViT architecture consists of:
 \item Model parameters: ViT-Base/16 configuration with 86M parameters
 \end{itemize}
 
-\textbf{Image Acquisition Protocol:} Post-ICSI oocyte images were acquired using the Embryoscope© time-lapse incubator system (Vitrolife©, Sweden) with a camera under a 635 nm LED light source passing through Hoffman's contrast modulation optics~\cite{gomez2022timelapse}. Images were captured every 10-20 minutes from fertilization through blastocyst development, with our analysis focusing on post-ICSI, pre-2PN timepoints. Original images were normalized for brightness and contrast, then resized to 224×224 pixels while maintaining aspect ratio through center cropping.
+\textbf{Image Acquisition Protocol:} Post-ICSI oocyte images were acquired using the EmbryoScope™ time-lapse incubator system (Vitrolife©, Sweden) with a camera under a 635 nm LED light source passing through Hoffman's contrast modulation optics~\cite{gomez2022timelapse}. Images were captured every 10-20 minutes from fertilization through blastocyst development, with our analysis focusing on post-ICSI, pre-2PN timepoints. Original images were normalized for brightness and contrast, then resized to 224×224 pixels while maintaining aspect ratio through center cropping.
 
 \subsubsection{Training and Validation}
 
