@@ -1,0 +1,61 @@
+\section{Discussion}\label{sec:discussion}
+
+\subsection{Clinical Significance and Implementation}
+
+Our dual-model framework addresses critical gaps in current IVF counseling by providing evidence-based, personalized predictions while maintaining realistic expectations about model capabilities~\cite{gameiro2023understanding,asrm2021counselors}. The parametric calculator offers immediate clinical utility through transparent, interpretable relationships that can enhance patient counseling conversations, while the oocyte quality assessment model provides objective support for embryologist evaluations~\cite{paternot2009observer,paternot2011multicentre,fordham2022embryologist}. This approach builds upon previous algorithmic developments that have demonstrated the potential for enhanced predictive accuracy in embryo assessment~\cite{rave2024bonna}, while addressing the documented challenges of inter-observer variability in morphological evaluation.
+
+The parametric calculator's emphasis on age-dependent AMH interpretation represents a significant improvement over current practice~\cite{ovarian_reserve_testing}. By avoiding misleading fixed AMH reference ranges and properly incorporating age-specific percentiles~\cite{lee2017amh,song2021amh}, the tool provides more accurate counseling information. The dramatic decline in age-specific AMH norms (from $\sim$1.8 ng/mL at age 25 to $\sim$0.18 ng/mL at age 42) demonstrates why age-agnostic AMH interpretation can severely mislead patients about their prognosis~\cite{lee2017amh}.
+
+\subsection{Model Performance in Clinical Context}
+
+The oocyte quality assessment model's performance (r = 0.421, AUC = 0.661) represents meaningful but modest predictive capability appropriate for clinical decision support~\cite{varoquaux2022machine,rajkomar2019machine}. While these metrics may appear moderate compared to some machine learning benchmarks, they reflect realistic performance on genuine clinical data where perfect prediction is inherently impossible due to biological complexity~\cite{litjens2017survey}.
+
+The model's high sensitivity (97.6\%) is particularly valuable clinically, as minimizing false negatives reduces the risk of discarding potentially viable embryos~\cite{cutting2008elective}. The corresponding modest specificity (23.1\%) suggests the model errs on the side of inclusion rather than exclusion—a conservative approach appropriate for reproductive medicine where false negatives carry higher clinical costs than false positives.
+
+Cross-validation error bars and statistical validation through label-shuffled controls provide robust evidence that observed performance represents genuine predictive signal rather than overfitting~\cite{hastie2009elements}. The large effect size (Cohen's d = 2.85) compared to shuffled controls~\cite{cohen1988statistical} confirms meaningful model capability beyond random chance~\cite{mann1947test}.
+
+\subsection{Advantages Over Current Practice}
+
+Current IVF counseling relies heavily on population-based statistics and subjective embryologist assessments~\cite{asrm2017embryo,racowsky2010standardization}. Our framework offers several advantages:
+
+\textbf{Objective Assessment:} The ViT model provides consistent, reproducible oocyte quality scores independent of inter-observer variability that plagues morphological evaluation~\cite{paternot2009observer,paternot2011multicentre}.
+
+\textbf{Personalized Predictions:} The parametric calculator incorporates individual patient factors (age, AMH) rather than broad demographic averages~\cite{gameiro2023understanding}, enabling more accurate prognosis discussions.
+
+\textbf{Transparent Methodology:} Unlike black-box approaches~\cite{rudin2019stop}, our parametric component allows clinicians to understand and explain prediction rationale to patients, supporting informed consent and shared decision-making~\cite{beauchamp2019principles}.
+
+\textbf{Integration Capability:} The framework combines cycle prediction with quality assessment, providing comprehensive counseling support rather than isolated tools~\cite{asrm2021counselors}.
+
+\subsection{Limitations and Future Directions}
+
+Several limitations merit acknowledgment for appropriate clinical interpretation~\cite{varoquaux2022machine}:
+
+\textbf{Performance Ceiling:} The moderate correlation (r = 0.421) reflects inherent biological complexity in predicting embryo development. While statistically significant and clinically meaningful, perfect prediction remains unattainable~\cite{rajkomar2019machine}.
+
+\textbf{Dataset Scope:} Training on 702 samples provides robust validation but may limit generalizability across diverse patient populations, laboratory protocols, and imaging systems~\cite{litjens2017survey}.
+
+\textbf{Temporal Considerations:} Oocyte assessment occurs early in the IVF process, while blastulation outcomes depend on subsequent development~\cite{meseguer2011morphokinetics}. This temporal gap introduces inherent prediction challenges.
+
+\textbf{Technical Requirements:} Clinical implementation requires standardized imaging protocols and computational infrastructure that may vary across institutions~\cite{mortimer2015quality}.
+
+Future research directions include expanding training datasets across multiple centers, investigating ensemble approaches combining morphological and molecular markers, and developing dynamic prediction models that incorporate time-series information throughout embryo development~\cite{meseguer2011morphokinetics}.
+
+\subsection{Clinical Translation Considerations}
+
+Successful clinical translation requires careful consideration of implementation factors~\cite{fda2022clinical,rajkomar2019machine}:
+
+\textbf{Validation Requirements:} Multi-center validation studies should confirm performance generalizability across diverse clinical settings and patient populations~\cite{varoquaux2022machine}.
+
+\textbf{Regulatory Considerations:} Clinical decision support tools require appropriate regulatory oversight to ensure patient safety and efficacy claims~\cite{fda2021ai,fda2022clinical}.
+
+\textbf{Training and Adoption:} Clinician education programs should emphasize appropriate interpretation of model outputs and integration with clinical judgment~\cite{topol2019high}.
+
+\textbf{Ethical Considerations:} Clear communication about model limitations and uncertainty is essential to maintain patient trust and support informed decision-making~\cite{beauchamp2019principles}.
+
+\subsection{Broader Impact on Reproductive Medicine}
+
+This work demonstrates the potential for evidence-based, data-driven approaches to enhance reproductive medicine while maintaining realistic expectations about AI capabilities~\cite{topol2019high}. By combining transparent parametric modeling with sophisticated machine learning techniques, the framework provides a template for responsible AI implementation in clinical settings~\cite{rudin2019stop}.
+
+The emphasis on honest performance reporting and uncertainty quantification sets important precedents for clinical AI development~\cite{varoquaux2022machine}. Rather than pursuing unrealistic accuracy claims, the approach prioritizes meaningful improvements over current practice while acknowledging inherent limitations~\cite{rajkomar2019machine}.
+
+The integrated framework also highlights opportunities for expanding personalized medicine in reproductive health through combination of multiple data modalities, transparent modeling approaches, and rigorous validation methodologies appropriate for clinical implementation~\cite{li2020federated,topol2019high}. 

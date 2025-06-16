@@ -1,0 +1,114 @@
+\section{Methods}\label{sec:methods}
+
+\subsection{Dataset and Study Design}\label{subsec:dataset}
+
+This study utilized the publicly available time-lapse embryo dataset described by Gomez et al.~\cite{gomez2022timelapse}, comprising 704 time-lapse videos of developing embryos with 2.4M images across 7 focal planes. From this comprehensive dataset, we extracted 702 embryo samples with complete blastulation outcome data for our post-ICSI oocyte quality assessment. Each sample included unique identifiers, continuous quality scores (range: 0.004-0.999, mean: 0.592 ± 0.287), and binary blastulation labels (66.7\% successful outcomes, reflecting typical clinical IVF success rates)~\cite{awadalla2021age,zhu2024developmental}. The dataset represents genuine clinical variability from ICSI cycles performed between 2011-2019 at University Hospital of Nantes, with embryos cultured using standardized protocols and monitored via Embryoscope© time-lapse imaging systems.
+
+All data analysis was performed using real clinical outcomes to ensure clinically relevant performance metrics~\cite{varoquaux2022machine}. Cross-validation was implemented using 8-fold stratified sampling to maintain class balance and provide robust performance estimates across the complete dataset~\cite{hastie2009elements}.
+
+\subsection{Parametric Cycle Prediction Calculator}\label{subsec:calculator}
+
+The parametric calculator incorporates established clinical relationships through transparent mathematical models, enabling interpretable predictions suitable for patient counseling~\cite{rudin2019stop}.
+
+\subsubsection{Age-Dependent AMH Modeling}
+
+The calculator implements age-specific AMH percentile distributions derived from published reproductive medicine literature~\cite{lee2017amh,song2021amh}. Rather than using fixed AMH ranges (which ignore age-dependency), the model incorporates age-adjusted normal values:
+
+\begin{equation}
+\text{AMH}_{\text{normal}}(\text{age}) = f(\text{age-specific percentiles})
+\end{equation}
+
+where AMH percentiles demonstrate dramatic age-related decline (e.g., median AMH $\approx$ 1.8 ng/mL at age 25 vs. $\approx$ 0.18 ng/mL at age 42)~\cite{lee2017amh}.
+
+\subsubsection{Oocyte Yield Prediction}
+
+The parametric model combines age effects and AMH multipliers through established clinical relationships~\cite{seifer2002amh,ovarian_reserve_testing}:
+
+\begin{equation}
+\text{Predicted Oocytes} = \text{Base}(\text{age}) \times \text{AMH Multiplier}(\text{AMH}, \text{age})
+\end{equation}
+
+where the age-dependent baseline follows:
+\begin{equation}
+\text{Base}(\text{age}) = \max(0, 20 - 0.5 \times (\text{age} - 25))
+\end{equation}
+
+and the AMH multiplier incorporates age-specific percentile normalization:
+\begin{equation}
+\text{AMH Multiplier} = 0.5 + 1.5 \times \text{AMH Percentile}(\text{age})
+\end{equation}
+
+The age component captures ovarian aging effects~\cite{acog2017advanced}, while the AMH multiplier adjusts predictions based on individual ovarian reserve relative to age-appropriate norms derived from Lee et al.~\cite{lee2017amh}. This approach provides transparent, clinically interpretable predictions that can be easily explained to patients during counseling sessions.
+
+\subsection{Oocyte Quality Assessment Model}\label{subsec:quality}
+
+\subsubsection{Vision Transformer Architecture}
+
+We implemented a Vision Transformer (ViT) model for oocyte quality assessment~\cite{dosovitskiy2021image}, leveraging the architecture's demonstrated effectiveness in medical image analysis~\cite{alhammuri2023vision}. The model processes standardized post-ICSI oocyte images (224×224 pixels, acquired immediately after intracytoplasmic sperm injection but before pronuclear formation) through attention mechanisms that can capture subtle morphological features relevant to blastulation potential~\cite{zhang2021machine}.
+
+The ViT architecture consists of:
+\begin{itemize}
+\item Patch embedding layers (16×16 patches) for image tokenization into 196 patches
+\item 12-layer transformer with multi-head self-attention mechanisms (12 heads)
+\item Position encoding for spatial relationship preservation
+\item MLP classification head with dropout (0.1) for blastulation prediction
+\item Model parameters: ViT-Base/16 configuration with 86M parameters
+\end{itemize}
+
+\textbf{Image Acquisition Protocol:} Post-ICSI oocyte images were acquired using the Embryoscope© time-lapse incubator system (Vitrolife©, Sweden) with a camera under a 635 nm LED light source passing through Hoffman's contrast modulation optics~\cite{gomez2022timelapse}. Images were captured every 10-20 minutes from fertilization through blastocyst development, with our analysis focusing on post-ICSI, pre-2PN timepoints. Original images were normalized for brightness and contrast, then resized to 224×224 pixels while maintaining aspect ratio through center cropping.
+
+\subsubsection{Training and Validation}
+
+Model training utilized the complete 702-sample dataset with 8-fold cross-validation~\cite{varoquaux2022machine}. Each fold maintained stratified sampling to preserve the 66.7\% positive class distribution observed in clinical practice.
+
+Training parameters included:
+\begin{itemize}
+\item Batch size optimization for available computational resources
+\item Learning rate scheduling with adaptive adjustments~\cite{kingma2015adam}
+\item Early stopping based on validation performance
+\item Regularization techniques to prevent overfitting
+\end{itemize}
+
+\subsubsection{Performance Evaluation}
+
+Model performance was assessed using multiple metrics appropriate for clinical applications~\cite{litjens2017survey}:
+
+\textbf{Continuous Prediction Metrics:}
+\begin{itemize}
+\item Pearson correlation coefficient (r)
+\item Mean Absolute Error (MAE) 
+\item Root Mean Square Error (RMSE)
+\end{itemize}
+
+\textbf{Binary Classification Metrics:}
+\begin{itemize}
+\item Accuracy, Precision, Recall, F1-Score
+\item Area Under the ROC Curve (AUC)
+\item Sensitivity and Specificity
+\item Positive and Negative Predictive Values
+\end{itemize}
+
+\textbf{Statistical Validation:}
+Cross-validation error bars were computed across all folds to quantify model stability. Statistical significance testing used Mann-Whitney U tests~\cite{mann1947test} comparing model performance against multiple baselines: (1) label-shuffled controls, (2) majority class classifier, and (3) random prediction baseline. Effect size calculations used Cohen's d~\cite{cohen1988statistical}. 
+
+\textbf{Baseline Comparisons:} Model performance was evaluated against established baselines:
+\begin{itemize}
+\item \textbf{Random Classifier}: AUC = 0.500, accuracy = 50\%
+\item \textbf{Majority Class}: Always predicts positive class (66.7\% accuracy)
+\item \textbf{Label Shuffle}: Same model architecture trained on randomized labels
+\item \textbf{Morphological Scoring}: Traditional embryologist assessment metrics
+\end{itemize}
+
+\subsection{Integrated Framework Implementation}
+
+The dual-model framework was designed for clinical integration~\cite{fda2022clinical}, providing:
+
+\begin{enumerate}
+\item \textbf{Parametric Calculator Interface}: Web-based tool allowing clinicians to input patient age and AMH values for immediate oocyte yield predictions with transparent assumptions.
+
+\item \textbf{Quality Assessment Pipeline}: Automated processing of oocyte images through the trained ViT model, providing quality scores and blastulation probability estimates.
+
+\item \textbf{Combined Reporting}: Integrated output combining cycle predictions with individual oocyte quality assessments for comprehensive patient counseling~\cite{asrm2021counselors}.
+\end{enumerate}
+
+All implementations prioritized transparency and clinical interpretability over black-box accuracy~\cite{topol2019high}, ensuring that predictions could be meaningfully discussed with patients and incorporated into clinical decision-making processes~\cite{beauchamp2019principles}. 

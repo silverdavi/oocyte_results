@@ -1,0 +1,11 @@
+Generated Figures for IVF Counseling Paper
+==================================================
+
+Continuous Model Figures:
+  - continuous_score_distribution.png
+
+Parametric Calculator Figures:
+  - calculator_amh_age_analysis.png
+
+Total figures: 2
+Generated on: 2025-06-16 10:58:02

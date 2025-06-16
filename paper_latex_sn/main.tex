@@ -1,0 +1,51 @@
+%Version 3.1 December 2024
+% Oocyte Quality Assessment and IVF Counseling Framework
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[pdflatex,sn-basic]{sn-jnl}% Basic Springer Nature Reference Style
+
+%%%% Standard Packages
+\usepackage{graphicx}%
+\usepackage{multirow}%
+\usepackage{amsmath,amssymb,amsfonts}%
+\usepackage{amsthm}%
+\usepackage{mathrsfs}%
+\usepackage{xcolor}%
+\usepackage{textcomp}%
+\usepackage{booktabs}%
+\usepackage{algorithm}%
+\usepackage{algorithmicx}%
+\usepackage{algpseudocode}%
+\usepackage{listings}%
+\usepackage{float}%
+\usepackage{subfig}%
+\usepackage{natbib}%
+\usepackage{url}%
+\usepackage{hyperref}%
+
+\raggedbottom
+
+\begin{document}
+
+\title[Data-Driven IVF Counseling]{Data-Driven IVF Counseling: Integrating Oocyte Quality Assessment with Personalized Cycle Predictions}
+
+\author*[1]{\fnm{David} \sur{Silver}}\email{david.silver@rhea-fertility.com}
+\author[1]{\fnm{Gilad} \sur{Rave}}\email{gilad.rave@rhea-fertility.com}
+
+\affil*[1]{\orgdiv{Rhea Labs}, \orgname{Rhea Fertility}, \orgaddress{\city{Singapore}, \country{Singapore}}}
+
+\abstract{In vitro fertilization (IVF) counseling traditionally relies on population-based statistics that inadequately capture individual patient variability in both cycle outcomes and oocyte quality assessment. We present a dual-model framework combining parametric cycle prediction with data-driven oocyte quality evaluation to enable personalized IVF counseling. Our parametric calculator incorporates age-dependent AMH percentiles and established clinical relationships to predict oocyte retrieval yields. For oocyte quality assessment, we develop a Vision Transformer model using the publicly available time-lapse embryo dataset (Gomez et al., 2022), analyzing 702 post-ICSI oocyte images (pre-2PN) from standardized Embryoscope© acquisitions with blastulation outcomes to predict developmental potential. The parametric calculator demonstrates transparent relationships between age, AMH levels, and predicted oocyte yields across clinically relevant scenarios. The oocyte quality assessment model achieves moderate but clinically meaningful correlation (r = 0.421) with actual blastulation outcomes and 71.1\% classification accuracy with high sensitivity (97.6\%) for identifying successful developmental candidates. This integrated framework provides clinicians with interpretable tools for evidence-based patient counseling while acknowledging realistic performance limitations suitable for clinical implementation.}
+
+\keywords{IVF counseling, oocyte quality assessment, Vision Transformer, parametric modeling, reproductive medicine, artificial intelligence, ICSI, blastulation prediction}
+
+\maketitle
+
+\input{sections/introduction}
+\input{sections/methods}  
+\input{sections/results}
+\input{sections/discussion}
+\input{sections/conclusion}
+
+\bibliography{references}
+
+\end{document} 
