@@ -1,13 +1,15 @@
 # Standard
-from enum import IntEnum
+from collections import OrderedDict
+from enum import Enum, IntEnum
 import json
-import traceback as tb
+from typing import Annotated, Dict, Iterable, List
 # External
 import numpy as np
-
-# Simple replacement for map_hook
-def map_hook(response):
-    return response
+# Internal
+from common import apigw_handler, MAP_CLAIMS_CLINIC, Ethnicity, InfertilityCondition
+from pgsql import PgSQL
+from ValiDecor.validators import Between, IsType, LenBetween, ListOf, OneOf
+from ValiDecor.validators import MapApiGatewayBody as MapB
 
 AGE_EXTRA = [ 0, 1, 3, 5, 7 ]
 
@@ -30,83 +32,75 @@ AMH_PERCENTILES = {
     44: [ 0.54, 0.37, 0.29, 0.24, 0.20, 0.17, 0.15, 0.13, 0.11, 0.10, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.03, 0.02 ],
 }
 
+ATTRITION = OrderedDict([
+    ('retrieved', {}),
+    ('frozen', {
+        30: (0.75, 0.8),
+        35: (0.65, 0.7),
+        40: (0.45, 0.5),
+        45: (0.20, 0.25),
+    }),
+    ('thawed', {
+        30: (0.85, 0.9),
+        35: (0.8, 0.85),
+        40: (0.7, 0.75),
+        45: (0.55, 0.6),
+    }),
+    ('fertilized', {
+        30: (0.75, 0.8),
+        35: (0.65, 0.7),
+        40: (0.55, 0.6),
+        45: (0.45, 0.5),
+    }),
+    ('good_embryos', {
+        30: (0.45, 0.5),
+        35: (0.35, 0.4),
+        40: (0.2, 0.25),
+        45: (0.1, 0.125),
+    }),
+    ('implanted', {
+        30: (0.55, 0.6),
+        35: (0.45, 0.5),
+        40: (0.35, 0.4),
+        45: (0.25, 0.275),
+    }),
+    ('livebirth', {}),
+])
+
 BMI_MAX = 45.0
 BMI_MIN = 15.0
 
-class Condition(IntEnum):
-    No = 0
-    PCOS = 1
-    UF = 2
-    UI = 3
-    DOR = 4
-    ENDO = 5
-
 CONDITION_FACTORS_BIRTH = {
-    Condition.ENDO: 0.8,
+    InfertilityCondition.ENDOMETRIOSIS: 0.8,
 }
 
 CONDITION_FACTORS_EGGS = {
-    Condition.ENDO: 0.9,
-    Condition.PCOS: 1.2,
-}
-
-CONDITION_NAMES = {
-    "Polycystic ovary syndrome (PCOS)": Condition.PCOS,
-    "Uterine factor": Condition.UF,
-    "Unexplained infertility": Condition.UI,
-    "Diminished ovarian reserve": Condition.DOR,
-    "Endometriosis": Condition.ENDO,
+    InfertilityCondition.ENDOMETRIOSIS: 0.9,
+    InfertilityCondition.PCOS: 1.2,
 }
 
 DEFAULT_MODE = 'gauss2'
 
 ETHNICITY_FACTORS = {
-    'asian': 0.82,
-    'black': 0.8,
-    'other': 0.85,
+    Ethnicity.ASIAN: 0.82,
+    Ethnicity.BLACK: 0.8,
+    Ethnicity.OTHER: 0.85,
 }
+
+NG_ML_2_PM_L = 7.18
 
 PARAMS_BMI = [ -4.439e-06, 0.0005938, -0.02932, 0.6203, -3.744 ]
 
-PARAMS_POLY = [ 0.000835, -0.09641, 3.776, -57.7, 315.1 ]
-
-PARAMS_GAUSS = [ 58.68, 28.56, 10.17 ]
-
-PARAMS_GAUSS1 = [ 41.52, 31.53, 8.163 ]
-PARAMS_GAUSS2 = [ 49.22, 15.2, 13.91 ]
-
 ROUNDS_MAX = 3
 
-def handler(event, context):
+class AmhUnit(IntEnum):
+    NanoGramsPerMilliLitre = 0
+    PicoMolesPerLitre = 1
 
-    try:
-        request = json.loads(event['body'])
-        print('request:', json.dumps(request))
+pg = PgSQL(env = 'MY')
 
-        age = float(request['age'])
-        weight = float(request['weight'])
-        height = float(request['height'] / 100.0)
-        bmi = float(request.get('bmi', weight / (height ** 2)))
-        ethnicity: list = request['ethnicity']
-        amh = request.get('amh')
-        no_amh = amh is None
-        if no_amh:
-            amh = normal_amh(age)
-        amh = float(amh)
-
-        condition: list = request['condition']
-        conditions = set(CONDITION_NAMES.get(c, Condition.No) for c in condition if c in CONDITION_NAMES)
-        
-        response = {
-            "input": request,
-            "results": [ compute_results(age + y, normal_amh(age + y) if no_amh else fix_amh_diff(amh, age, age + y), bmi, ethnicity, conditions) for y in AGE_EXTRA ],
-        }
-
-    except Exception as e:
-        tb.print_exc()
-        response = { 'error': e }
-
-    return map_hook(response)
+def amh_decline(age):
+    return -0.02205 * np.exp(-((age - 30.57) / 12.36) ** 2)
 
 def babies_cycles(p1: float, eggs: int):
     probs = []
@@ -127,61 +121,85 @@ def bmi_factor(bmi: float):
 def clbr_by_age(age):
     return 1 - (1 - lbr_by_age(age)) ** oocytes_by_age_old(age)
 
-def compute_results(age: float, amh: float, bmi: float, ethnicity: list, conditions: list):
+def compute_results(age: float, amh: float, bmi: float, 
+        ethnicity: Iterable[Ethnicity],
+        conditions: Iterable[InfertilityCondition],
+        l_afc: int = None, r_afc: int = None,
+    ):
     # normalize
     age0 = age
     age = float(np.clip(age, AGE_MIN, AGE_MAX))
     bmi = np.clip(bmi, BMI_MIN, BMI_MAX)
     # eggs
-    health_factor_eggs = condition_factor(conditions, CONDITION_FACTORS_EGGS)
+    health_factor_eggs = np.prod(factorize(conditions, CONDITION_FACTORS_EGGS))
     print('health_factor_eggs:', health_factor_eggs)
     eggs_normal = int(np.floor(oocytes_by_age_old(age) * health_factor_eggs))
     eggs = []
     eggs_tot = 0
     for i in range(ROUNDS_MAX):
         age_i = np.clip(age + i, AGE_MIN, AGE_MAX)
-        eggs_i = oocytes_by_age_new(age_i)
-        eggs_i *= health_factor_eggs
+        eggs_i = oocytes_by_age_new(age_i) * health_factor_eggs
         norm_amh = normal_amh(age_i)
         fixed_amh = fix_amh_diff(amh, age, age_i)
-        gomp = gompertz(fixed_amh / norm_amh)
-        eggs_i *= gomp
-        # if i == 0:
-        # print(f'age: {age} \tage_i: {age_i} \tamh: {amh}\tfixed: {fixed_amh} \tnorm: {norm_amh}\tgomp: {gomp} \teggs: {eggs_i}')
-        # eggs_i = min(eggs_i, 1.3 * oocytes_by_age_new(age_i))
+        eggs_i *= gompertz(fixed_amh / norm_amh)
         eggs_i = int(np.floor(eggs_i))
         eggs_tot += eggs_i
         eggs.append(eggs_tot)
     # births
     clbr = clbr_by_age(age)
     clbr *= bmi_factor(bmi)
-    clbr *= ethnicity_factor(ethnicity)
-    clbr *= condition_factor(conditions, CONDITION_FACTORS_BIRTH)
+    clbr *= np.mean(factorize(ethnicity, ETHNICITY_FACTORS))
+    clbr *= np.prod(factorize(conditions, CONDITION_FACTORS_BIRTH))
     lbr = 1 - (1 - clbr) ** (1 / eggs_normal)
     clbr = 1 - (1 - lbr) ** (eggs[0])
     births = babies_cycles(clbr, eggs[0])
-    # done
+    # Calculate number of eggs expected to be frozen successfully
+    retrieved = eggs[0]
+    if l_afc is None or r_afc is None:
+        frozen = retrieved
+    else:
+        afc = l_afc + r_afc
+        if amh is None:
+            frozen = 0.8 * (retrieved + 0.2 * afc)
+        else:
+            orpi = (amh * afc) / age
+            if InfertilityCondition.PCOS in conditions:
+                frozen = 0.65 * retrieved + 0.35 * orpi * 0.9
+            else:
+                frozen = 0.65 * retrieved + 0.35 * orpi
+    # Calculate attrition rates
+    thawed = frozen * get_attrition_rate(age, 'thawed')
+    fertilized = thawed * get_attrition_rate(age, 'fertilized')
+    good_embryos = fertilized * get_attrition_rate(age, 'good_embryos')
+    implanted = good_embryos * get_attrition_rate(age, 'implanted')
+    # Apply patient-specific factors
+    implanted *= bmi_factor(bmi)
+    implanted *= np.mean(factorize(ethnicity, ETHNICITY_FACTORS))
+    implanted *= np.prod(factorize(conditions, CONDITION_FACTORS_BIRTH))
+    # Calculate livebirths
+    livebirth = implanted * 0.8
+    attrition = {
+        'retrieved': retrieved,
+        'frozen': int(np.ceil(frozen)),
+        'thawed': int(np.ceil(thawed)),
+        'fertilized': int(np.ceil(fertilized)),
+        'good_embryos': int(np.ceil(good_embryos)),
+        'implanted': int(np.ceil(implanted)),
+        'livebirth': int(np.ceil(livebirth)),
+    }
     return {
         'age': round(age0),
         'births': births,
         'eggs': eggs,
+        'attrition': attrition,
+        'attrition_graph': get_attrition_points(attrition)
     }
 
-def condition_factor(conditions, factors):
-    return np.prod([ factors.get(c, 1.0) for c in conditions ])
+def factorize(props: Iterable[Enum], factors: Dict[Enum, float]):
+    if len(props) == 0:
+        return [ 1.0 ]
+    return [ factors.get(p, 1.0) for p in props ]
 
-def normal_amh(age):
-    params = [ 4.6, -0.12, 30.5, 0.17 ]
-    return sigmoid(age, *params)
-
-def ethnicity_factor(ethnicity: list):
-    if len(ethnicity) == 0:
-        return 1.0
-    return np.mean([ ETHNICITY_FACTORS.get(eth.lower(), 1.0) for eth in ethnicity ])
-
-def amh_decline(age):
-    return -0.02205*np.exp(-((age-30.57)/12.36)**2)
-    
 def fix_amh(old_amh, old_age, new_age):
     if new_age == old_age:
         return old_amh
@@ -195,12 +213,39 @@ def fix_amh(old_amh, old_age, new_age):
     new_age = np.clip(new_age, AGE_MIN, AGE_MAX)
     new_age_bracket = new_age - new_age % 2
     new_amh = amh_factor * AMH_PERCENTILES[new_age_bracket][percentile_index]
-    # print(old_age, new_age, old_amh, percentile_index, new_amh, amh_factor)
     return new_amh
 
 def fix_amh_diff(old_amh, old_age, new_age):
-    new_amh = old_amh + amh_decline(0.5*(new_age+old_age))*(new_age-old_age)
+    new_amh = old_amh + amh_decline(0.5 * (new_age + old_age)) * (new_age - old_age)
     return new_amh
+
+def get_attrition_points(attrition_dict):
+    left = [ float(attrition_dict[stage]) for stage in ATTRITION ]
+    right = left[1:] + [ left[-1] * 0.9 ]
+    result = {
+        stage: {
+            'left': round(l, 1),
+            'middle': round((l + r) / 2 + min(0.075 * (l - r), 0.25), 1),
+            'right': round(r, 1)
+        } for stage, l, r in zip(ATTRITION, left, right)
+    }
+    return result
+
+def get_attrition_rate(age: float, stage: str) -> float:
+    rates = ATTRITION.get(stage, {})
+    ages = sorted(rates.keys())
+    if age <= ages[0]:
+        return np.mean(rates[ages[0]])
+    if age >= ages[-1]:
+        return np.mean(rates[ages[-1]])
+
+    for age_lo, age_hi in zip(ages[:-1], ages[1:]):
+        if age < age_hi:
+            break
+    rate_lo = np.mean(rates[age_lo])
+    rate_hi = np.mean(rates[age_hi])
+    age_ratio = (age - age_lo) / (age_hi - age_lo)
+    return rate_lo + age_ratio * (rate_hi - rate_lo)
 
 def gompertz(x):
     A = 0.9
@@ -215,14 +260,18 @@ def lbr_by_age(age):
     params = [ 13, 1.5, 33, 0.5 ]
     return sigmoid(age, *params) / 100
 
-def oocytes_by_age_old(age):
-    params = [ 22, 2, 38, 0.41 ]
+def normal_amh(age):
+    params = [ 4.6, -0.12, 30.5, 0.17 ]
     return sigmoid(age, *params)
 
 def oocytes_by_age_new(age):
     params = [-1.4, 22, 37,-0.13]
     return sigmoid(age, *params)
- 
+
+def oocytes_by_age_old(age):
+    params = [ 22, 2, 38, 0.41 ]
+    return sigmoid(age, *params)
+
 def prettify(prob: float):
     return round(prob * 100)
     # return round(prob * 10000) / 100
@@ -230,3 +279,48 @@ def prettify(prob: float):
 def sigmoid(x, a, b, c, d):
     y = a + (b - a) / (1 + np.exp(-(x - c) * d))
     return y
+
+# /post
+@apigw_handler
+def handler(
+        clinic: Annotated[str, MAP_CLAIMS_CLINIC],
+        patient: Annotated[str, MapB('name'), IsType(), LenBetween(2, 32)],
+        age: Annotated[int, MapB('age'), IsType(), Between(15, 50)],
+        height: Annotated[int, MapB('height'), IsType(), Between(120, 200)], # height in cm
+        weight: Annotated[int, MapB('weight'), IsType(), Between(40, 160)], # weight in kg
+        amh_value: Annotated[float, MapB('amh_value', float)] = None,
+        amh_units: Annotated[int, MapB('amh_units'),
+                             IsType(),
+                             OneOf(*[ e.value for e in AmhUnit ])] = AmhUnit.NanoGramsPerMilliLitre.value,
+        bmi: Annotated[float, MapB('bmi', float)] = None,
+        condition: Annotated[List[int], MapB('condition'),
+                             ListOf(*[ e.value for e in InfertilityCondition ])] = [],
+        ethnicity: Annotated[List[int], MapB('ethnicity'), 
+                             LenBetween(hi = 4),
+                             ListOf(*[ e.value for e in Ethnicity ])] = [],
+    ):
+    # 1 ng/ml = 7.18 pmol/l.
+    qvars = {
+        'clinic': clinic,
+        'patient': patient,
+        'age': age,
+        'height': height,
+        'weight': weight,
+        'amh_value': amh_value,
+        'amh_units': amh_units,
+        'bmi': bmi,
+        'condition': json.dumps(condition, default = str),
+        'ethnicity': json.dumps(ethnicity, default = str),
+    }
+    row = pg.exec_fetch_one('fertility/cycle_create', qvars)
+    print('cycle:', json.dumps(row, default = str))
+    if bmi is None:
+        bmi = weight / (height ** 2)
+    if amh_value is not None and amh_units == AmhUnit.PicoMolesPerLitre.value:
+        amh_value = amh_value / NG_ML_2_PM_L
+    famh = normal_amh if amh_value is None else lambda ay: fix_amh_diff(amh_value, age, ay)
+    conditions = set(map(InfertilityCondition, condition))
+    ethnicity = set(map(Ethnicity, ethnicity))
+    results = [ compute_results(age + y, famh(age + y), bmi, ethnicity, conditions) for y in AGE_EXTRA ]
+    print('results:', results)
+    return { "results": results }

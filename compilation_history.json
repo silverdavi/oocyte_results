@@ -1,0 +1,97 @@
+{
+  "current_version": "0.2.2",
+  "compilations": [
+    {
+      "version": "0.0.1",
+      "timestamp": "2025-06-26T05:25:37.650399",
+      "compilation_time_seconds": 11.19529,
+      "versioned_file": "compiled_papers/IVF_Counseling_Framework_v0.0.1_20250626_052537.pdf",
+      "latest_file": "compiled_papers/IVF_Counseling_Framework_latest.pdf",
+      "source_hashes": {
+        "paper_latex_sn/main.tex": "ed1811fd6f0ab9ce617a704ce74b41b4",
+        "paper_latex_sn/references.bib": "27ea3290790f9f2c289057507410dc28",
+        "paper_latex_sn/sections/introduction.tex": "24355796c23110f60cc8f70af42e3c1b",
+        "paper_latex_sn/sections/methods.tex": "df452f9dc29ff658447e11dd52979172",
+        "paper_latex_sn/sections/results.tex": "993fec776053af2dacc02832f6e3f486",
+        "paper_latex_sn/sections/discussion.tex": "a95a374768f358e0be66ea604bd716bb",
+        "paper_latex_sn/sections/conclusion.tex": "eaad15e331af7eed94a3829633f6693f"
+      },
+      "tex_file": "paper_latex_sn/main.tex",
+      "success": true
+    },
+    {
+      "version": "0.1.0",
+      "timestamp": "2025-06-26T05:26:39.517790",
+      "compilation_time_seconds": 11.065144,
+      "versioned_file": "compiled_papers/IVF_Counseling_Framework_v0.1.0_20250626_052639.pdf",
+      "latest_file": "compiled_papers/IVF_Counseling_Framework_latest.pdf",
+      "source_hashes": {
+        "paper_latex_sn/main.tex": "08cda718f6761b3ccb8c61d244953f12",
+        "paper_latex_sn/references.bib": "27ea3290790f9f2c289057507410dc28",
+        "paper_latex_sn/sections/introduction.tex": "24355796c23110f60cc8f70af42e3c1b",
+        "paper_latex_sn/sections/methods.tex": "df452f9dc29ff658447e11dd52979172",
+        "paper_latex_sn/sections/results.tex": "993fec776053af2dacc02832f6e3f486",
+        "paper_latex_sn/sections/discussion.tex": "a95a374768f358e0be66ea604bd716bb",
+        "paper_latex_sn/sections/conclusion.tex": "eaad15e331af7eed94a3829633f6693f"
+      },
+      "tex_file": "paper_latex_sn/main.tex",
+      "success": true
+    },
+    {
+      "version": "0.2.0",
+      "timestamp": "2025-06-26T05:31:37.812512",
+      "compilation_time_seconds": 11.14862,
+      "versioned_file": "compiled_papers/ART_Counseling_Framework_v0.2.0_20250626_053126.pdf",
+      "latest_file": "compiled_papers/ART_Counseling_Framework_latest.pdf",
+      "source_hashes": {
+        "paper_latex_sn/main.tex": "61d9606bffa838f4daa95c7fd5f640e6",
+        "paper_latex_sn/references.bib": "27ea3290790f9f2c289057507410dc28",
+        "paper_latex_sn/sections/introduction.tex": "89f3c99610b6f3f5eb84370494669e77",
+        "paper_latex_sn/sections/methods.tex": "df452f9dc29ff658447e11dd52979172",
+        "paper_latex_sn/sections/results.tex": "993fec776053af2dacc02832f6e3f486",
+        "paper_latex_sn/sections/discussion.tex": "fe05053ddd85f0a7df3a521ec87bee33",
+        "paper_latex_sn/sections/conclusion.tex": "eb57be94a8ce6b8c4fe94b6cf883d1fc"
+      },
+      "tex_file": "paper_latex_sn/main.tex",
+      "success": true
+    },
+    {
+      "version": "0.2.1",
+      "timestamp": "2025-06-26T05:33:55.620524",
+      "compilation_time_seconds": 11.311331,
+      "versioned_file": "compiled_papers/ART_Counseling_Framework_v0.2.1_20250626_053344.pdf",
+      "latest_file": "compiled_papers/ART_Counseling_Framework_latest.pdf",
+      "source_hashes": {
+        "paper_latex_sn/main.tex": "61d9606bffa838f4daa95c7fd5f640e6",
+        "paper_latex_sn/references.bib": "2a1820a908a0676690fbdb84ef48fe5d",
+        "paper_latex_sn/sections/introduction.tex": "4d0a8b7d424f82063d0c8163e30025d1",
+        "paper_latex_sn/sections/methods.tex": "df452f9dc29ff658447e11dd52979172",
+        "paper_latex_sn/sections/results.tex": "993fec776053af2dacc02832f6e3f486",
+        "paper_latex_sn/sections/discussion.tex": "a14f7254b25f654c7b2fe4c571b8a11d",
+        "paper_latex_sn/sections/conclusion.tex": "eb57be94a8ce6b8c4fe94b6cf883d1fc"
+      },
+      "tex_file": "paper_latex_sn/main.tex",
+      "success": true
+    },
+    {
+      "version": "0.2.2",
+      "timestamp": "2025-06-26T05:38:15.512928",
+      "compilation_time_seconds": 11.288534,
+      "versioned_file": "compiled_papers/ART_Counseling_Framework_v0.2.2_20250626_053804.pdf",
+      "latest_file": "compiled_papers/ART_Counseling_Framework_latest.pdf",
+      "raw_tex_file": "compiled_papers/ART_Counseling_Framework_v0.2.2_20250626_053815_raw.tex",
+      "source_hashes": {
+        "paper_latex_sn/main.tex": "61d9606bffa838f4daa95c7fd5f640e6",
+        "paper_latex_sn/references.bib": "2a1820a908a0676690fbdb84ef48fe5d",
+        "paper_latex_sn/sections/introduction.tex": "4d0a8b7d424f82063d0c8163e30025d1",
+        "paper_latex_sn/sections/methods.tex": "df452f9dc29ff658447e11dd52979172",
+        "paper_latex_sn/sections/results.tex": "993fec776053af2dacc02832f6e3f486",
+        "paper_latex_sn/sections/discussion.tex": "a14f7254b25f654c7b2fe4c571b8a11d",
+        "paper_latex_sn/sections/conclusion.tex": "eb57be94a8ce6b8c4fe94b6cf883d1fc"
+      },
+      "tex_file": "paper_latex_sn/main.tex",
+      "success": true
+    }
+  ],
+  "paper_name": "IVF_Counseling_Framework"
+}
